@@ -80,18 +80,21 @@ isValidGuess :: Set String -> String -> Bool
 isValidGuess dictionary = (&&) <$> (>= 5) . length <*> (`S.member` dictionary)
 
 gradeGuess :: String -> String -> [(Char, Grade)]
-gradeGuess dailyWord guess = fmap ((,) <$> fst <*> uncurry grade) rightOrWrong
+gradeGuess dailyWord guess =
+  reverse . fst . foldl grade ([], unguessedLetters) $ guessRightOrWrong
  where
-  grade :: Char -> Bool -> Grade
-  grade _ True                              = GradeRight
-  grade c False | c `elem` unguessedLetters = GradeAlmost
-                | otherwise                 = GradeWrong
+  grade :: ([(Char, Grade)], [Char]) -> (Char, Bool) -> ([(Char, Grade)], [Char])
+  grade (gs, unguessed) (c, True ) = ((c, GradeRight) : gs, unguessed )
+  grade (gs, unguessed) (c, False) =
+    if c `elem` unguessed
+      then ((c, GradeAlmost) : gs, delete c unguessed)
+      else ((c, GradeWrong ) : gs, unguessed         )
 
-  rightOrWrong = zipWith (\w g -> (g, g == w)) dailyWord guess
+  guessRightOrWrong = zipWith (ap (,) . (==)) dailyWord guess
 
   unguessedLetters =
-    let guessed = fmap fst . filter snd $ rightOrWrong
-    in dailyWord \\ guessed
+    let lettersGuessedRight = fmap fst . filter snd $ guessRightOrWrong
+    in dailyWord \\ lettersGuessedRight
 
 isGameFinished :: String -> [String] -> Bool
 isGameFinished dailyWord gs@(g:_) | length gs >= 6 = True
