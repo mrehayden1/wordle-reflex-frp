@@ -56,10 +56,13 @@ grid inputDyn gradedGuessesDyn =
           <=< delay ((fromIntegral i - 1) * animationDuration / 2)
           . updated . fmap (\n -> if j <= n then "animate" else "")
           $ numGuessesDyn
-    let gradeClassDyn = zipDynWith (\g n -> if j <= n then g else "")
-                                   (fmap (gradeClass . snd) charGradeDyn)
-                                   numGuessesDyn
-        classesDyn = do
+    gradeClassDyn <- holdDyn ""
+      <=< delay (fromIntegral i * animationDuration / 2)
+      . updated
+      . zipDynWith (\g n -> if j <= n then g else "")
+          (fmap (gradeClass . snd) charGradeDyn)
+      $ numGuessesDyn
+    let classesDyn = do
           a <- animClassDyn
           g <- gradeClassDyn
           return ["box", a, g]
