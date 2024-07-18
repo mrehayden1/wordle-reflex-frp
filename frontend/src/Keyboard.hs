@@ -75,7 +75,7 @@ jsKeyToKey key = do
   case key of
     "Enter"                -> Just KeyEnter
     "Backspace"            -> Just KeyBackspace
-    (c:[])      | isChar c -> Just $ KeyChar c
+    (c:[])      | isChar c -> Just . KeyChar . toLower $ c
     _                      -> Nothing
  where
   isChar c = 65 <= ord c && ord c <= 90 || 97 <= ord c && ord c <= 122
