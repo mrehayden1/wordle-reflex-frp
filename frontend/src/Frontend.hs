@@ -20,7 +20,6 @@ import Grid
 import Keyboard
 import Messages
 import Words.Daily
-import Words.Dictionary
 
 initDay :: Day
 initDay = read "2024-07-11"
@@ -38,16 +37,21 @@ frontend = Frontend {
       blank,
   _frontend_body =
     prerender_ blank $ do
-      elAttr "div" ("id" =: "app") app
+      e <- getPostBuild
+      dictionaryE <- return . fmap (S.fromList . fromJust)
+        <=< getAndDecode
+        $ $(static "dictionary.json") <$ e
+      elAttr "div" ("id" =: "app") $ do
+        _ <- widgetHold blank (fmap app dictionaryE)
+        return ()
   }
 
-app :: MonadWidget t m => m ()
-app = do
+app :: MonadWidget t m => Set String -> m ()
+app dictionary = do
   el "header" $ text "Wordle"
   -- Get today's word and the dictionary
   day <- liftIO . fmap utctDay $ getCurrentTime
   let dailyWord = dailyWords !! fromIntegral (day `diffDays` initDay)
-      dictionary = S.fromList dictionaryWords
   do rec let inputDyn' = fmap (fmap reverse)
                . foldDyn (collectInput . getFirst) ""
                . gate (fmap not finished)
